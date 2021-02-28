@@ -32,7 +32,7 @@ namespace WebApi.Middleware
                 var responseModel = new Response<string>() { Succeeded = false, Message = error?.Message };
 
                 switch (error)
-            {
+                {
                     case ApiException e:
                         // custom application error
                         response.StatusCode = (int)HttpStatusCode.BadRequest;
@@ -51,6 +51,11 @@ namespace WebApi.Middleware
                         response.StatusCode = (int)HttpStatusCode.InternalServerError;
                         break;
                 }
+                //if(error is ValidationException e)
+                //{
+                //    response.StatusCode = (int)HttpStatusCode.BadRequest;
+                //    responseModel.Errors = e.Errors;
+                //}
                 var result = JsonSerializer.Serialize(responseModel);
 
                 await response.WriteAsync(result);

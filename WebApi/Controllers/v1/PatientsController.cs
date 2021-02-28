@@ -14,22 +14,26 @@ namespace WebApi.Controllers.v1
     using Microsoft.AspNetCore.Authorization;
     using System.Threading.Tasks;
     using Application.Wrappers;
+    using MediatR;
+    using System.Threading;
+    using static WebApi.Features.Patients.GetPatient;
+    using static WebApi.Features.Patients.CreatePatient;
+    using static WebApi.Features.Patients.DeletePatient;
+    using static WebApi.Features.Patients.PatchPatient;
+    using static WebApi.Features.Patients.GetPatientList;
+    using static WebApi.Features.Patients.UpdatePatient;
 
     [ApiController]
     [Route("api/Patients")]
     [ApiVersion("1.0")]
+    [AllowAnonymous]
     public class PatientsController: Controller
     {
-        private readonly IPatientRepository _patientRepository;
-        private readonly IMapper _mapper;
+        private readonly IMediator _mediator;
 
-        public PatientsController(IPatientRepository patientRepository
-            , IMapper mapper)
+        public PatientsController(IMediator mediator)
         {
-            _patientRepository = patientRepository ??
-                throw new ArgumentNullException(nameof(patientRepository));
-            _mapper = mapper ??
-                throw new ArgumentNullException(nameof(mapper));
+            _mediator = mediator;
         }
         
         /// <summary>
@@ -71,27 +75,27 @@ namespace WebApi.Controllers.v1
         [Consumes("application/json")]
         [Produces("application/json")]
         [HttpGet(Name = "GetPatients")]
-        public async Task<IActionResult> GetPatients([FromQuery] PatientParametersDto patientParametersDto)
+        public async Task<IActionResult> GetPatients([FromQuery] PatientParametersDto patientParametersDto, CancellationToken cancellationToken)
         {
-            var patientsFromRepo = await _patientRepository.GetPatientsAsync(patientParametersDto);
+            var patientQuery = new PatientListQuery(patientParametersDto);
+            var patientsDto = await _mediator.Send(patientQuery, cancellationToken);
 
             var paginationMetadata = new
             {
-                totalCount = patientsFromRepo.TotalCount,
-                pageSize = patientsFromRepo.PageSize,
-                currentPageSize = patientsFromRepo.CurrentPageSize,
-                currentStartIndex = patientsFromRepo.CurrentStartIndex,
-                currentEndIndex = patientsFromRepo.CurrentEndIndex,
-                pageNumber = patientsFromRepo.PageNumber,
-                totalPages = patientsFromRepo.TotalPages,
-                hasPrevious = patientsFromRepo.HasPrevious,
-                hasNext = patientsFromRepo.HasNext
+                totalCount = patientsDto.TotalCount,
+                pageSize = patientsDto.PageSize,
+                currentPageSize = patientsDto.CurrentPageSize,
+                currentStartIndex = patientsDto.CurrentStartIndex,
+                currentEndIndex = patientsDto.CurrentEndIndex,
+                pageNumber = patientsDto.PageNumber,
+                totalPages = patientsDto.TotalPages,
+                hasPrevious = patientsDto.HasPrevious,
+                hasNext = patientsDto.HasNext
             };
 
             Response.Headers.Add("X-Pagination",
                 JsonSerializer.Serialize(paginationMetadata));
 
-            var patientsDto = _mapper.Map<IEnumerable<PatientDto>>(patientsFromRepo);
             var response = new Response<IEnumerable<PatientDto>>(patientsDto);
 
             return Ok(response);
@@ -113,16 +117,16 @@ namespace WebApi.Controllers.v1
         [Authorize(Policy = "CanReadPatients")]
         [Produces("application/json")]
         [HttpGet("{patientId}", Name = "GetPatient")]
-        public async Task<ActionResult<PatientDto>> GetPatient(Guid patientId)
+        public async Task<ActionResult<PatientDto>> GetPatient(Guid patientId, CancellationToken cancellationToken)
         {
-            var patientFromRepo = await _patientRepository.GetPatientAsync(patientId);
+            var patientQuery = new PatientQuery(patientId);
+            var patientDto = await _mediator.Send(patientQuery, cancellationToken);
 
-            if (patientFromRepo == null)
+            if (patientDto == null)
             {
                 return NotFound();
             }
 
-            var patientDto = _mapper.Map<PatientDto>(patientFromRepo);
             var response = new Response<PatientDto>(patientDto);
 
             return Ok(response);
@@ -145,33 +149,23 @@ namespace WebApi.Controllers.v1
         [Consumes("application/json")]
         [Produces("application/json")]
         [HttpPost]
-        public async Task<ActionResult<PatientDto>> AddPatient([FromBody]PatientForCreationDto patientForCreation)
+        public async Task<IActionResult> AddPatient([FromBody]PatientForCreationDto patientForCreation, CancellationToken cancellationToken)
         {
-            var validationResults = new PatientForCreationDtoValidator().Validate(patientForCreation);
-            validationResults.AddToModelState(ModelState, null);
-
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(new ValidationProblemDetails(ModelState));
-                //return ValidationProblem();
-            }
-
-            var patient = _mapper.Map<Patient>(patientForCreation);
-            await _patientRepository.AddPatient(patient);
-            var saveSuccessful = await _patientRepository.SaveAsync();
-
-            if(saveSuccessful)
-            {
-                var patientFromRepo = await _patientRepository.GetPatientAsync(patient.PatientId);
-                var patientDto = _mapper.Map<PatientDto>(patientFromRepo);
+                var creationCommand = new PatientForCreationCommand(patientForCreation);
+                var patientDto = await _mediator.Send(creationCommand, cancellationToken);
                 var response = new Response<PatientDto>(patientDto);
-                
+
                 return CreatedAtRoute("GetPatient",
                     new { patientDto.PatientId },
                     response);
             }
-
-            return StatusCode(500);
+            catch(Exception e)
+            {
+                // add a specific catch for Notfound
+                return StatusCode(500);
+            }
         }
         
         /// <summary>
@@ -190,17 +184,10 @@ namespace WebApi.Controllers.v1
         [Authorize(Policy = "CanDeletePatients")]
         [Produces("application/json")]
         [HttpDelete("{patientId}")]
-        public async Task<ActionResult> DeletePatient(Guid patientId)
+        public async Task<ActionResult> DeletePatient(Guid patientId, CancellationToken cancellationToken)
         {
-            var patientFromRepo = await _patientRepository.GetPatientAsync(patientId);
-
-            if (patientFromRepo == null)
-            {
-                return NotFound();
-            }
-
-            _patientRepository.DeletePatient(patientFromRepo);
-            await _patientRepository.SaveAsync();
+            var patientQuery = new PatientForDeleteCommand(patientId);
+            await _mediator.Send(patientQuery, cancellationToken);
 
             return NoContent();
         }
@@ -223,27 +210,9 @@ namespace WebApi.Controllers.v1
         [HttpPut("{patientId}")]
         public async Task<IActionResult> UpdatePatient(Guid patientId, PatientForUpdateDto patient)
         {
-            var patientFromRepo = await _patientRepository.GetPatientAsync(patientId);
-
-            if (patientFromRepo == null)
-            {
-                return NotFound();
-            }
-
-            var validationResults = new PatientForUpdateDtoValidator().Validate(patient);
-            validationResults.AddToModelState(ModelState, null);
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new ValidationProblemDetails(ModelState));
-                //return ValidationProblem();
-            }
-
-            _mapper.Map(patient, patientFromRepo);
-            _patientRepository.UpdatePatient(patientFromRepo);
-
-            await _patientRepository.SaveAsync();
-
+            // add error handling
+            var updateCommand = new PatientForUpdateCommand(patientId, patient);
+            await _mediator.Send(updateCommand);
             return NoContent();
         }
         
@@ -264,32 +233,10 @@ namespace WebApi.Controllers.v1
         [Consumes("application/json")]
         [Produces("application/json")]
         [HttpPatch("{patientId}")]
-        public async Task<IActionResult> PartiallyUpdatePatient(Guid patientId, JsonPatchDocument<PatientForUpdateDto> patchDoc)
+        public async Task<IActionResult> PartiallyUpdatePatient(Guid patientId, JsonPatchDocument<PatientForUpdateDto> patchDoc, CancellationToken cancellationToken)
         {
-            if (patchDoc == null)
-            {
-                return BadRequest();
-            }
-
-            var existingPatient = await _patientRepository.GetPatientAsync(patientId);
-
-            if (existingPatient == null)
-            {
-                return NotFound();
-            }
-
-            var patientToPatch = _mapper.Map<PatientForUpdateDto>(existingPatient); // map the patient we got from the database to an updatable patient model
-            patchDoc.ApplyTo(patientToPatch, ModelState); // apply patchdoc updates to the updatable patient
-
-            if (!TryValidateModel(patientToPatch))
-            {
-                return ValidationProblem(ModelState);
-            }
-
-            _mapper.Map(patientToPatch, existingPatient); // apply updates from the updatable patient to the db entity so we can apply the updates to the database
-            _patientRepository.UpdatePatient(existingPatient); // apply business updates to data if needed
-
-            await _patientRepository.SaveAsync(); // save changes in the database
+            var patientPatchCommand = new PatientForPatchCommand(patientId, patchDoc);
+            await _mediator.Send(patientPatchCommand, cancellationToken);
 
             return NoContent();
         }

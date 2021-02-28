@@ -2,6 +2,7 @@ namespace Infrastructure.Persistence.Repositories
 {
     using System;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using Application.Dtos.Patient;
     using Application.Interfaces.Patient;
@@ -26,7 +27,7 @@ namespace Infrastructure.Persistence.Repositories
                 throw new ArgumentNullException(nameof(sieveProcessor));
         }
 
-        public async Task<PagedList<Patient>> GetPatientsAsync(PatientParametersDto patientParameters)
+        public async Task<PagedList<Patient>> GetPatientsAsync(PatientParametersDto patientParameters, CancellationToken cancellationToken)
         {
             if (patientParameters == null)
             {
@@ -46,7 +47,8 @@ namespace Infrastructure.Persistence.Repositories
 
             return await PagedList<Patient>.CreateAsync(collection,
                 patientParameters.PageNumber,
-                patientParameters.PageSize);
+                patientParameters.PageSize, 
+                cancellationToken);
         }
 
         public async Task<Patient> GetPatientAsync(Guid patientId)

@@ -14,6 +14,7 @@ namespace WebApi.Controllers.v1
     using Microsoft.AspNetCore.Authorization;
     using System.Threading.Tasks;
     using Application.Wrappers;
+    using System.Threading;
 
     [ApiController]
     [Route("api/Samples")]
@@ -66,9 +67,9 @@ namespace WebApi.Controllers.v1
         [Consumes("application/json")]
         [Produces("application/json")]
         [HttpGet(Name = "GetSamples")]
-        public async Task<IActionResult> GetSamples([FromQuery] SampleParametersDto sampleParametersDto)
+        public async Task<IActionResult> GetSamples([FromQuery] SampleParametersDto sampleParametersDto, CancellationToken cancellationToken)
         {
-            var samplesFromRepo = await _sampleRepository.GetSamplesAsync(sampleParametersDto);
+            var samplesFromRepo = await _sampleRepository.GetSamplesAsync(sampleParametersDto, cancellationToken);
 
             var paginationMetadata = new
             {

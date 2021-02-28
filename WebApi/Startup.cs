@@ -10,6 +10,7 @@ namespace WebApi
     using WebApi.Extensions;
     using Serilog;
     using Infrastructure.Identity;
+    using MediatR;
 
     public class Startup
     {
@@ -35,6 +36,7 @@ namespace WebApi
                 .AddNewtonsoftJson();
             services.AddApiVersioningExtension();
             services.AddHealthChecks();
+            services.AddMediatR(typeof(Startup));
 
             #region Dynamic Services
             services.AddSwaggerExtension(_config);
