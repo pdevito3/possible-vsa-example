@@ -3,12 +3,7 @@ namespace WebApi.Controllers.v1
     using System;
     using System.Collections.Generic;
     using System.Text.Json;
-    using AutoMapper;
-    using FluentValidation.AspNetCore;
     using Application.Dtos.Patient;
-    using Application.Interfaces.Patient;
-    using Application.Validation.Patient;
-    using Domain.Entities;
     using Microsoft.AspNetCore.JsonPatch;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Authorization;

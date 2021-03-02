@@ -15,6 +15,7 @@
     using Application.Dtos.Patient;
     using AutoMapper.QueryableExtensions;
     using Microsoft.EntityFrameworkCore;
+    using WebApi.Features.Patients.Validators;
 
     public class CreatePatient
     {
@@ -28,13 +29,10 @@
             }
         }
 
-        public class Validator : AbstractValidator<PatientForCreationDto>
+        public class CustomCreatePatientValidation : PatientForManipulationDtoValidator<PatientForCreationDto>
         {
-            public Validator()
+            public CustomCreatePatientValidation()
             {
-                RuleFor(p => p.LastName).NotNull().Length(1, 5);
-                RuleFor(p => p.FirstName).NotNull().Length(1, 50);
-                RuleFor(p => p.Dob).NotNull();
             }
         }
 

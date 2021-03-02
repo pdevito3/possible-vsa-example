@@ -13,6 +13,7 @@
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using WebApi.Features.Patients.Validators;
 
     public class UpdatePatient
     {
@@ -28,14 +29,10 @@
             }
         }
 
-        public class Validator : AbstractValidator<PatientForUpdateDto>
+        public class CustomPatchPatientValidation : PatientForManipulationDtoValidator<PatientForUpdateDto>
         {
-            // move this to a centralized location???
-            public Validator()
+            public CustomPatchPatientValidation()
             {
-                RuleFor(p => p.LastName).NotNull().Length(1, 50);
-                RuleFor(p => p.FirstName).NotNull().Length(1, 50);
-                RuleFor(p => p.Dob).NotNull();
             }
         }
 
