@@ -11,6 +11,8 @@ namespace WebApi
     using Serilog;
     using Infrastructure.Identity;
     using MediatR;
+    using System.Reflection;
+    using AutoMapper;
 
     public class Startup
     {
@@ -28,7 +30,6 @@ namespace WebApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCorsService("MyCorsPolicy");
-            services.AddApplicationLayer();
             services.AddPersistenceInfrastructure(_config);
             services.AddIdentityInfrastructure(_config, _env);
             services.AddSharedInfrastructure(_config);
@@ -37,6 +38,7 @@ namespace WebApi
             services.AddApiVersioningExtension();
             services.AddHealthChecks();
             services.AddMediatR(typeof(Startup));
+            services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
             #region Dynamic Services
             services.AddSwaggerExtension(_config);

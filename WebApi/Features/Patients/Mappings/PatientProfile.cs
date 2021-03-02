@@ -1,4 +1,4 @@
-namespace Application.Mappings
+namespace WebApi.Features.Patients.Mappings
 {
     using Application.Dtos.Patient;
     using Application.Wrappers;
