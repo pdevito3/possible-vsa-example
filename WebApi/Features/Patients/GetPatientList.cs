@@ -42,7 +42,7 @@
                 _sieveProcessor = sieveProcessor;
             }
 
-            public async Task<PagedList<PatientDto>> Handle(PatientListQuery request, CancellationToken cancellationToken)
+            public async Task<PagedList<PatientDto>> Handle(PatientListQuery request, CancellationToken cancellationToken = default)
             {
                 if (request.PatientParametersDto == null)
                 {

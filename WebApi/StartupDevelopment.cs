@@ -14,6 +14,8 @@ namespace WebApi
     using Infrastructure.Identity;
     using MediatR;
     using FluentValidation.AspNetCore;
+    using System.Reflection;
+    using AutoMapper;
 
     public class StartupDevelopment
     {
@@ -31,7 +33,6 @@ namespace WebApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCorsService("MyCorsPolicy");
-            services.AddApplicationLayer();
             services.AddPersistenceInfrastructure(_config);
             services.AddIdentityInfrastructure(_config, _env);
             services.AddSharedInfrastructure(_config);
@@ -42,6 +43,7 @@ namespace WebApi
             services.AddMediatR(typeof(Startup));
             services.AddMvc()
                 .AddFluentValidation(cfg => { cfg.RegisterValidatorsFromAssemblyContaining<Startup>(); });
+            services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
             #region Dynamic Services
             services.AddSwaggerExtension(_config);

@@ -12,15 +12,15 @@ namespace VerticalLabTestPostgres.Api.Tests.IntegrationTests.Patient
     using WebApi;
     using System.Collections.Generic;
     using Infrastructure.Persistence.Contexts;
-    using Microsoft.Extensions.DependencyInjection;    
+    using Microsoft.Extensions.DependencyInjection;
     using Microsoft.AspNetCore.JsonPatch;
     using System.Linq;
     using AutoMapper;
     using Bogus;
-    using Application.Mappings;
     using System.Text;
     using Application.Wrappers;
     using VerticalLabTestPostgres.Api.Tests.Helpers;
+    using WebApi.Features.Patients.Mappings;
 
     [Collection("Sequential")]
     public class UpdatePatientIntegrationTests : IClassFixture<CustomWebApplicationFactory>

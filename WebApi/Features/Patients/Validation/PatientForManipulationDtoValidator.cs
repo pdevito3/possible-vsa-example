@@ -1,4 +1,4 @@
-namespace Application.Validation.Patient
+namespace WebApi.Features.Patients.Validation
 {
     using Application.Dtos.Patient;
     using FluentValidation;
@@ -8,8 +8,9 @@ namespace Application.Validation.Patient
     {
         public PatientForManipulationDtoValidator()
         {
-            // add fluent validation rules that should be shared between creation and update operations here
-            //https://fluentvalidation.net/
+            RuleFor(p => p.LastName).NotNull().Length(1, 3);
+            RuleFor(p => p.FirstName).NotNull().Length(1, 50);
+            RuleFor(p => p.Dob).NotNull();
         }
     }
 }
