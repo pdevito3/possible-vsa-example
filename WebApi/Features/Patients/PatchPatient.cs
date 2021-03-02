@@ -3,6 +3,10 @@
     using Application.Dtos.Patient;
     using Application.Exceptions;
     using AutoMapper;
+    using AutoMapper.QueryableExtensions;
+    using Domain.Entities;
+    using FluentValidation;
+    using FluentValidation.AspNetCore;
     using Infrastructure.Persistence.Contexts;
     using MediatR;
     using Microsoft.AspNetCore.JsonPatch;
@@ -11,7 +15,7 @@
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using WebApi.Features.Patients.Validation;
+    using WebApi.Features.Patients.Validators;
 
     public class PatchPatient
     {
@@ -27,10 +31,9 @@
             }
         }
 
-        public class CustomPatchValidator : PatientForManipulationDtoValidator<PatientForUpdateDto>
+        public class CustomPatchPatientValidation : PatientForManipulationDtoValidator<PatientForUpdateDto>
         {
-            // move this to a centralized location???
-            public CustomPatchValidator()
+            public CustomPatchPatientValidation()
             {
             }
         }
@@ -66,7 +69,7 @@
                 var patientToPatch = _mapper.Map<PatientForUpdateDto>(patientToUpdate); // map the patient we got from the database to an updatable patient model
                 patchCommand.PatchDoc.ApplyTo(patientToPatch); // apply patchdoc updates to the updatable patient
 
-                var validationResults = new CustomPatchValidator().Validate(patientToPatch);
+                var validationResults = new CustomPatchPatientValidation().Validate(patientToPatch);
                 if (!validationResults.IsValid)
                 {
                     throw new Application.Exceptions.ValidationException(validationResults.Errors);

@@ -1,28 +1,28 @@
 namespace WebApi.Controllers.v1
 {
-    using Application.Dtos.Patient;
-    using Application.Wrappers;
-    using MediatR;
-    using Microsoft.AspNetCore.Authorization;
-    using Microsoft.AspNetCore.JsonPatch;
-    using Microsoft.AspNetCore.Mvc;
     using System;
     using System.Collections.Generic;
     using System.Text.Json;
-    using System.Threading;
+    using Application.Dtos.Patient;
+    using Microsoft.AspNetCore.JsonPatch;
+    using Microsoft.AspNetCore.Mvc;
+    using Microsoft.AspNetCore.Authorization;
     using System.Threading.Tasks;
+    using Application.Wrappers;
+    using MediatR;
+    using System.Threading;
+    using static WebApi.Features.Patients.GetPatient;
     using static WebApi.Features.Patients.CreatePatient;
     using static WebApi.Features.Patients.DeletePatient;
-    using static WebApi.Features.Patients.GetPatient;
-    using static WebApi.Features.Patients.GetPatientList;
     using static WebApi.Features.Patients.PatchPatient;
+    using static WebApi.Features.Patients.GetPatientList;
     using static WebApi.Features.Patients.UpdatePatient;
 
     [ApiController]
     [Route("api/Patients")]
     [ApiVersion("1.0")]
-    //[AllowAnonymous]
-    public class PatientsController : Controller
+    [AllowAnonymous]
+    public class PatientsController: Controller
     {
         private readonly IMediator _mediator;
 
@@ -30,7 +30,7 @@ namespace WebApi.Controllers.v1
         {
             _mediator = mediator;
         }
-
+        
         /// <summary>
         /// Gets a list of all Patients.
         /// </summary>
@@ -61,19 +61,19 @@ namespace WebApi.Controllers.v1
         ///    | `@=`     | Contains                      |  `!@=*`   | Case-insensitive string does not Contains    |
         ///    | `_=`     | Starts with                   |  `!_=*`   | Case-insensitive string does not Starts with |
         /// </remarks>
-        [ProducesResponseType(typeof(Response<PagedList<PatientDto>>), 200)]
+        [ProducesResponseType(typeof(Response<IEnumerable<PatientDto>>), 200)]
         [ProducesResponseType(typeof(ValidationProblemDetails), 400)]
-        [ProducesResponseType(401)]
+        [ProducesResponseType(401)] 
         [ProducesResponseType(403)]
         [ProducesResponseType(500)]
         [Authorize(Policy = "CanReadPatients")]
         [Consumes("application/json")]
         [Produces("application/json")]
         [HttpGet(Name = "GetPatients")]
-        public async Task<IActionResult> GetPatients([FromQuery] PatientParametersDto patientParametersDto)
+        public async Task<IActionResult> GetPatients([FromQuery] PatientParametersDto patientParametersDto, CancellationToken cancellationToken)
         {
             var patientQuery = new PatientListQuery(patientParametersDto);
-            var patientsDto = await _mediator.Send(patientQuery);
+            var patientsDto = await _mediator.Send(patientQuery, cancellationToken);
 
             var paginationMetadata = new
             {
@@ -91,11 +91,11 @@ namespace WebApi.Controllers.v1
             Response.Headers.Add("X-Pagination",
                 JsonSerializer.Serialize(paginationMetadata));
 
-            var response = new Response<PagedList<PatientDto>>(patientsDto);
+            var response = new Response<IEnumerable<PatientDto>>(patientsDto);
 
             return Ok(response);
         }
-
+        
         /// <summary>
         /// Gets a single Patient by ID.
         /// </summary>
@@ -106,7 +106,7 @@ namespace WebApi.Controllers.v1
         /// <response code="500">There was an error on the server while creating the Patient.</response>
         [ProducesResponseType(typeof(Response<PatientDto>), 200)]
         [ProducesResponseType(typeof(ValidationProblemDetails), 400)]
-        [ProducesResponseType(401)]
+        [ProducesResponseType(401)] 
         [ProducesResponseType(403)]
         [ProducesResponseType(500)]
         [Authorize(Policy = "CanReadPatients")]
@@ -126,7 +126,7 @@ namespace WebApi.Controllers.v1
 
             return Ok(response);
         }
-
+        
         /// <summary>
         /// Creates a new Patient record.
         /// </summary>
@@ -137,14 +137,14 @@ namespace WebApi.Controllers.v1
         /// <response code="500">There was an error on the server while creating the Patient.</response>
         [ProducesResponseType(typeof(Response<PatientDto>), 201)]
         [ProducesResponseType(typeof(ValidationProblemDetails), 400)]
-        [ProducesResponseType(401)]
+        [ProducesResponseType(401)] 
         [ProducesResponseType(403)]
         [ProducesResponseType(500)]
         [Authorize(Policy = "CanAddPatients")]
         [Consumes("application/json")]
         [Produces("application/json")]
         [HttpPost]
-        public async Task<IActionResult> AddPatient([FromBody] PatientForCreationDto patientForCreation, CancellationToken cancellationToken)
+        public async Task<IActionResult> AddPatient([FromBody]PatientForCreationDto patientForCreation, CancellationToken cancellationToken)
         {
             try
             {
@@ -156,13 +156,13 @@ namespace WebApi.Controllers.v1
                     new { patientDto.PatientId },
                     response);
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 // add a specific catch for Notfound
                 return StatusCode(500);
             }
         }
-
+        
         /// <summary>
         /// Deletes an existing Patient record.
         /// </summary>
@@ -173,7 +173,7 @@ namespace WebApi.Controllers.v1
         /// <response code="500">There was an error on the server while creating the Patient.</response>
         [ProducesResponseType(201)]
         [ProducesResponseType(typeof(ValidationProblemDetails), 400)]
-        [ProducesResponseType(401)]
+        [ProducesResponseType(401)] 
         [ProducesResponseType(403)]
         [ProducesResponseType(500)]
         [Authorize(Policy = "CanDeletePatients")]
@@ -186,7 +186,7 @@ namespace WebApi.Controllers.v1
 
             return NoContent();
         }
-
+        
         /// <summary>
         /// Updates an entire existing Patient.
         /// </summary>
@@ -197,7 +197,7 @@ namespace WebApi.Controllers.v1
         /// <response code="500">There was an error on the server while creating the Patient.</response>
         [ProducesResponseType(201)]
         [ProducesResponseType(typeof(ValidationProblemDetails), 400)]
-        [ProducesResponseType(401)]
+        [ProducesResponseType(401)] 
         [ProducesResponseType(403)]
         [ProducesResponseType(500)]
         [Authorize(Policy = "CanUpdatePatients")]
@@ -210,7 +210,7 @@ namespace WebApi.Controllers.v1
             await _mediator.Send(updateCommand);
             return NoContent();
         }
-
+        
         /// <summary>
         /// Updates specific properties on an existing Patient.
         /// </summary>
@@ -221,7 +221,7 @@ namespace WebApi.Controllers.v1
         /// <response code="500">There was an error on the server while creating the Patient.</response>
         [ProducesResponseType(201)]
         [ProducesResponseType(typeof(ValidationProblemDetails), 400)]
-        [ProducesResponseType(401)]
+        [ProducesResponseType(401)] 
         [ProducesResponseType(403)]
         [ProducesResponseType(500)]
         [Authorize(Policy = "CanUpdatePatients")]

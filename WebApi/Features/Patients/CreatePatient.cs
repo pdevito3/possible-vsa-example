@@ -1,16 +1,21 @@
 ﻿namespace WebApi.Features.Patients
 {
-    using Application.Dtos.Patient;
     using AutoMapper;
-    using AutoMapper.QueryableExtensions;
     using Domain.Entities;
     using Infrastructure.Persistence.Contexts;
     using MediatR;
-    using Microsoft.EntityFrameworkCore;
     using System;
-    using System.Threading;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
     using System.Threading.Tasks;
-    using WebApi.Features.Patients.Validation;
+    using System.ComponentModel.DataAnnotations;
+    using FluentValidation;
+    using System.Threading;
+    using Application.Dtos.Patient;
+    using AutoMapper.QueryableExtensions;
+    using Microsoft.EntityFrameworkCore;
+    using WebApi.Features.Patients.Validators;
 
     public class CreatePatient
     {
@@ -60,6 +65,7 @@
                     // logger message
                     throw new Exception("Save error. Should throw a 500 from here");
                 }
+
             }
         }
     }

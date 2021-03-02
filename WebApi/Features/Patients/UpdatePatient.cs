@@ -2,14 +2,18 @@
 {
     using Application.Dtos.Patient;
     using AutoMapper;
+    using AutoMapper.QueryableExtensions;
+    using Domain.Entities;
+    using FluentValidation;
     using Infrastructure.Persistence.Contexts;
     using MediatR;
+    using Microsoft.AspNetCore.JsonPatch;
     using Microsoft.EntityFrameworkCore;
     using System;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using WebApi.Features.Patients.Validation;
+    using WebApi.Features.Patients.Validators;
 
     public class UpdatePatient
     {
@@ -25,10 +29,9 @@
             }
         }
 
-        public class CustomUpdateValidator : PatientForManipulationDtoValidator<PatientForUpdateDto>
+        public class CustomPatchPatientValidation : PatientForManipulationDtoValidator<PatientForUpdateDto>
         {
-            // move this to a centralized location???
-            public CustomUpdateValidator()
+            public CustomPatchPatientValidation()
             {
             }
         }
